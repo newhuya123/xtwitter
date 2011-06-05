@@ -1,0 +1,23 @@
+﻿<?
+error_reporting (E_ALL & ~E_NOTICE);
+
+require "function.php";
+$uploadfile="uploads/".$_FILES['image']['name'];
+if($_FILES['image']['type']!='image/bmp'&&$_FILES['image']['type']!='image/gif'&&$_FILES['image']['type']!='image/jpeg'){
+	$str=<<< HERE
+		{"ret":"上传文件类型只可以为gif"}
+HERE;
+	echo $str;
+  exit;
+}
+if(move_uploaded_file($_FILES['image']['tmp_name'],$uploadfile)){
+	$str=<<< HERE
+		{"ret":"success","img":"$uploadfile","content":"图片已上传"}
+HERE;
+//	$str='{"ret":"success"}'; //,"img":"Beijing","street":" Chaoyang Road ","postcode":&ret}
+	echo $str;
+  exit;
+}
+$str="{ret:'上传失败'}";
+echo $str;
+?>

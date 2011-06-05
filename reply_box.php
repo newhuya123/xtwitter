@@ -1,0 +1,58 @@
+﻿<?
+error_reporting (E_ALL & ~E_NOTICE);
+
+mysql_connect("localhost","xtwitter","xtwitter");
+mysql_select_db("xtwitter");
+
+$id = $_REQUEST['id'];
+
+//$sqlstring = "SELECT * FROM messages where parent_id=$id order by shout_at desc";
+$sqlstring="SELECT * FROM messages,users where users.id=messages.user_id and parent_id=$id order by shout_at desc";
+$result=mysql_query($sqlstring);
+
+?>
+<div class="status_reply_list">
+	<div class="arrow1"></div>
+	<div class="top"></div>
+	<div class="cont">
+		<table border="0" width="100%">
+			<tr>
+				<td>
+					<div class="fleft" style="margin-top:8px">
+						<a href="javascript:void(0);" onclick="showemotion('emotion_<?= $id ?>','replybox_<?= $id ?>')">
+							<img src="image/facelist/facelist.gif">
+						</a>
+					</div>
+					<textarea id="replybox_<?= $id ?>" onkeyup="replynums('replybox_<?= $id ?>','rnum_<?= $id ?>');" onkeydown="javascript:return ctrlEnter_rb(event,'<?= $id ?>',1);" class="input_text replytextarea"></textarea>
+					<div class="clearline"></div>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<div id="emotion_<?= $id ?>"></div>
+					<div class="fleft">
+						<input type="checkbox" class="replaycheckbox" id="replycheckbox_<?= $id ?>">
+						<label for="replycheckbox_<?= $id ?>" class="replycheckbox">同时转发到我的微博</label>
+					</div>
+					<div class="fright">
+						<span class="inputnum">还能输入<em id="rnum_<?= $id ?>">140</em>字</span>
+						<input type="button" id="replybutton_<?= $id ?>" class="button1" value="评 论" onclick="replysend('<?= $id ?>')"/></div><div class="clearline">
+					</div>
+				</td>
+			</tr>
+		</table>
+            <ul class="reply_list_ul">
+<? while( $row=mysql_fetch_array($result) ){ ?>
+            	<li class="lire" style="">
+                <div class="images"><a href="http://bentutu.com/me/index.php?s=/qqq"><img width="30px" src="uploads/avatar/noavatar.jpg"></a></div>
+                <div class="info">
+                    <p><a href="http://bentutu.com/me/index.php?s=/qqq" class="username "><?= $row['username']?></a>
+                    <span class="setgray">刚才&nbsp;&nbsp;通过网页&nbsp;<a onclick="delmsg('delmsg.php?s=<?= $row[0] ?>','确实要删除此条广播吗?',this.parentNode.parentNode.parentNode.parentNode)" class="fright" href="javascript:void(0)">删除</a></span></p>
+                    <p><?= $row['content'] ?></p>
+                </div>
+            	</li>
+<? } ?>
+            </ul>
+	</div>
+	<div class="bottom"></div>
+</div>

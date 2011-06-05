@@ -1,0 +1,69 @@
+用PHP实现URL地址防盗链
+
+php 2005-10-17 14:30:12 阅读117 评论0   字号：大中小 订阅
+
+5月5日 
+ 
+ 
+ 
+
+ 
+      URL地址一般分为两类，一类是纯页面的地址，另一类是带有参数的地址。本文实现的是带参数URL地址的防盗链。在大部分网站中，我们都能看到诸如：http://www.xxx.com/xxx.php?id=xxx这种形式的页面地址，这些页面往往根据后边参数id的不同而显示不同内容。对于这类页面，只需对后边的参数进行判断，就能实现防止非法链接！采取的方式很简单，就是用Session与mcrypt加密库结合。首先在起始页（就是用户合法访问的页面）生成一个随机数，存入Session，并是用mcrypt加密库中的加密函数对id的值进行加密，密钥就是刚才那个随机数。而在显示页面中，首先从Session中获得那个随机数，并用它作为密钥对加密的id值进行解密。这样，由于密钥是随机生成，每次访问都不一样，同时因为存储在Session中，所以浏览器已关闭，密钥就失效，达到了防止盗链的目的。源代码如下：
+
+起始页：index.php
+
+session_start();
+if(!isset($_SESSION['rand']))
+ $_SESSION['rand'] = mt_rand();          //产生密钥并存入Session
+function EncodeURL($eurl, $rand)
+{
+ $EnCoder_Key = $rand;
+ $EnCoder_type=MCRYPT_RIJNDAEL_128;
+ $encrypted_string = mcrypt_encrypt( $EnCoder_type, trim($EnCoder_Key), $eurl, MCRYPT_MODE_OFB);
+ $encrypted_string=bin2hex($encrypted_string);
+ return $encrypted_string;
+}                                                     //EncoderURL函数为加密函数
+
+//然后开始加密数据，这里是从数据库里取数据，数据库名为test
+
+mysql_connect($server_name, $server_username, $server_password);
+mysql_select_db($db_name);
+$sql = "select id from test";
+$result = mysql_query($sql);
+while($row = mysql_fetch_array($result))
+{
+ $rand = $_SESSION['rand'];
+ $eid = EncodeURL($row['id'], $rand);
+ echo "<a href='http://www.xxx.com/xxx.php?id=".$eid."'>XXX</a>";
+}
+
+ 
+
+显示页：xxx.php
+
+session_start();
+$rand = $_SESSION['rand'];                     //通过Session取得密钥
+function DecodeURL($eurl, $rand)
+{
+ $EnCoder_Key = $rand;
+ $EnCoder_type=MCRYPT_RIJNDAEL_128;
+ $eurl=trim($eurl);
+ for ($i=0;$i<strlen($eurl);$i+=2)
+ {
+  $string_en.=chr(hexdec(substr($eurl,$i,2)));
+ }
+ $decrypted_string = mcrypt_decrypt($EnCoder_type, $EnCoder_Key, trim($string_en), MCRYPT_MODE_OFB);
+ return trim($decrypted_string);
+}                                                       //DecodeURL为解密函数
+mysql_connect($server_name, $server_username, $server_password);
+mysql_select_db($db_name);
+$eid = $_GET['id'];
+$eid = DecodeURL($eid, $rand);           //解密后，才是真正的ID值
+$sql = "select * from test where id = '$eid'";
+$result = mysql_query($sql);
+if(!$row = mysql_fetch_array($result))
+ exit("URL地址错误!");
+
+ 
+
+注：mcrypt库不是PHP标准库，但是PHP官方发布版本已经自带，所以需要使用的话，只需打开php.ini，找到;extension=php_mcrypt.dll这一行，把前边的分号去掉，重启一下Apache就行了。
